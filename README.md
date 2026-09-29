@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Artero Galeri
 
-## Getting Started
+Galeria online conectada ao Google Drive. Suas fotos ficam no Drive, o app só indexa metadados e cria miniaturas.
 
-First, run the development server:
+## Stack
+
+- **Framework**: Next.js 15 (App Router, Server Actions)
+- **Auth**: Auth.js v5 (NextAuth) com Google OAuth
+- **Database**: Postgres (Neon) + Drizzle ORM
+- **Storage**: Cloudflare R2 (miniaturas)
+- **UI**: Tailwind v4 + shadcn/ui (Radix) + lucide-react
+- **State**: TanStack Query + Zustand
+
+## Visualizações
+
+- Masonry / Grid
+- Linhas Justificadas (estilo Google Photos)
+- Timeline por data (EXIF)
+- Apresentação / Lightbox
+- Árvore de pastas
+- Mapa geográfico (OpenStreetMap)
+
+## Controle de Acesso
+
+- Público (indexável)
+- Link não listado (secreto)
+- Senha por galeria
+- Lista de e-mails permitidos (OTP)
+- Expiração opcional
+- Download permitido/bloqueado
+- Resolução máxima configurável
+
+## Setup
 
 ```bash
+# Instalar dependências
+npm install
+
+# Configurar variáveis de ambiente
+cp .env.example .env.local
+# Editar .env.local com suas credenciais
+
+# Gerar schema do banco
+npm run db:generate
+npm run db:push
+
+# Desenvolvimento
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variáveis de Ambiente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Veja `.env.example` para a lista completa. Principais:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `DATABASE_URL` - Connection string do Neon
+- `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` - OAuth Google
+- `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` - Cloudflare R2
+- `TOKEN_ENCRYPTION_KEY` - `openssl rand -base64 32`
+- `GALLERY_JWT_SECRET` - `openssl rand -base64 48`
 
-## Learn More
+## Google Cloud Setup
 
-To learn more about Next.js, take a look at the following resources:
+1. Criar projeto no Google Cloud Console
+2. Habilitar Google Drive API
+3. OAuth Consent Screen → External → Publicar (não verificado)
+4. Criar OAuth 2.0 Client ID (Web)
+5. Redirect URI: `https://seu-dominio/api/auth/callback/google`
+6. Scopes: `drive.readonly`, `userinfo.email`, `userinfo.profile`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Vercel + Neon + Cloudflare R2 (todos com free tier generoso).
 
-## Deploy on Vercel
+## Licença
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
