@@ -67,7 +67,7 @@ export default async function GalleryDetailPage({ params }: Props) {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Sincronização</CardTitle>
+                <CardTitle>Sincroniza├º├úo</CardTitle>
                 <CardDescription>Sincronize as fotos do Google Drive</CardDescription>
               </div>
               <SyncStatus gallery={gallery} />
@@ -79,7 +79,7 @@ export default async function GalleryDetailPage({ params }: Props) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Mídia recentes</CardTitle>
+              <CardTitle>M├¡dia recentes</CardTitle>
             </CardHeader>
             <CardContent>
               <RecentMedia gallery={gallery} />
@@ -90,7 +90,7 @@ export default async function GalleryDetailPage({ params }: Props) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Informações</CardTitle>
+              <CardTitle>Informa├º├Áes</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <dl className="space-y-3 text-sm">
@@ -103,11 +103,11 @@ export default async function GalleryDetailPage({ params }: Props) {
                   <dd className="font-medium text-truncate max-w-[200px]">{gallery.sourcePath || gallery.sourceFolderId}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Visualização padrão</dt>
+                  <dt className="text-muted-foreground">Visualiza├º├úo padr├úo</dt>
                   <dd className="font-medium capitalize">{gallery.settings?.defaultView || 'justified'}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Ordenação</dt>
+                  <dt className="text-muted-foreground">Ordena├º├úo</dt>
                   <dd className="font-medium">{gallery.settings?.sortBy || 'dateTaken'} ({gallery.settings?.sortDir || 'desc'})</dd>
                 </div>
                 {gallery.expiresAt && (
@@ -128,14 +128,14 @@ export default async function GalleryDetailPage({ params }: Props) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form action="/admin/galleries/delete" method="POST" onSubmit={(e) => { if (!confirm('Tem certeza que deseja excluir esta galeria? Esta ação não pode ser desfeita.')) e.preventDefault(); }}>
+              <form action="/admin/galleries/delete" method="POST" onSubmit={(e) => { if (!confirm('Tem certeza que deseja excluir esta galeria? Esta a├º├úo n├úo pode ser desfeita.')) e.preventDefault(); }}>
                 <input type="hidden" name="id" value={gallery.id} />
                 <Button type="submit" variant="destructive" className="w-full">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Excluir galeria
                 </Button>
                 <p className="mt-2 text-xs text-muted-foreground text-center">
-                  Isso remove a galeria e todos os metadados indexados. As fotos no Google Drive <strong>não</strong> são afetadas.
+                  Isso remove a galeria e todos os metadados indexados. As fotos no Google Drive <strong>n├úo</strong> s├úo afetadas.
                 </p>
               </form>
             </CardContent>
@@ -157,7 +157,7 @@ function SyncStatus({ gallery }: { gallery: any }) {
   const statusLabels: Record<string, string> = {
     idle: 'Parado',
     running: 'Sincronizando...',
-    completed: 'Concluído',
+    completed: 'Conclu├¡do',
     failed: 'Erro',
   };
 
@@ -178,7 +178,7 @@ function SyncProgress({ gallery }: { gallery: any }) {
           {gallery.syncStatus === 'running' 
             ? `Sincronizando...` 
             : gallery.lastSyncedAt 
-              ? `Última sync: ${formatDistanceToNow(new Date(gallery.lastSyncedAt), { addSuffix: true, locale: ptBR })}` 
+              ? `├Ültima sync: ${formatDistanceToNow(new Date(gallery.lastSyncedAt), { addSuffix: true, locale: ptBR })}` 
               : 'Nunca sincronizado'}
         </span>
       </div>
@@ -225,7 +225,7 @@ async function RecentMediaInner({ gallery }: { gallery: any }) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         <Image className="mx-auto mb-3 h-12 w-12 opacity-50" />
-        <p>Nenhuma mídia indexada ainda</p>
+        <p>Nenhuma m├¡dia indexada ainda</p>
         <Button className="mt-4" onClick={() => window.location.reload()}>
           <RefreshCw className="mr-2 h-4 w-4" />
           Sincronizar
