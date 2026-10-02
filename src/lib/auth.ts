@@ -88,13 +88,43 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
         token.providerId = account.providerAccountId;
+        token.email = user.email;
+      }
+
+      if (hasDatabase) {
+        const email = token.email as string | undefined;
+        const googleSub = token.providerId as string | undefined;
+        if (email || googleSub) {
+          try {
+            let dbUser = googleSub
+              ? await db.query.users.findFirst({ where: eq(schema.users.googleSub, googleSub) })
+              : undefined;
+            if (!dbUser && email) {
+              dbUser = await db.query.users.findFirst({ where: eq(schema.users.email, email) });
+            }
+
+            if (dbUser) {
+              token.sub = dbUser.id;
+              token.userId = dbUser.id;
+
+              const provider = await db.query.cloudProviders.findFirst({
+                where: eq(schema.cloudProviders.userId, dbUser.id),
+              });
+              token.cloudProviderId = provider?.id;
+              token.hasDrive = !!provider?.encryptedRefreshToken;
+            }
+          } catch (e) {
+            console.error('jwt callback error:', e);
+          }
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.sub!;
+        session.user.id = (token.userId as string) || token.sub!;
         (session.user as any).cloudProviderId = token.cloudProviderId as string;
+        (session.user as any).hasDrive = token.hasDrive as boolean;
       }
       return session;
     },

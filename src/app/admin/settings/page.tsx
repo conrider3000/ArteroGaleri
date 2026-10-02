@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatDateTime } from '@/lib/utils/date';
 import { FolderOpen, Key, Shield, ExternalLink, Settings, Plus, LogOut, Edit } from 'lucide-react';
+import { ConnectDriveButton } from '../ConnectDriveButton';
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -27,14 +28,9 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           {providers.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="text-center py-8 space-y-3">
               <p className="text-muted-foreground mb-4">Nenhum provedor conectado</p>
-              <Link href="/admin/galleries/new">
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Conectar Google Drive
-                </Button>
-              </Link>
+              <ConnectDriveButton />
             </div>
           ) : (
             <div className="space-y-4">
@@ -53,14 +49,13 @@ export default async function SettingsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {provider.isDefault && (
+                    {!provider.encryptedRefreshToken ? (
+                      <ConnectDriveButton label="Reconectar" />
+                    ) : (
                       <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
-                        Padrão
+                        Ativo
                       </span>
                     )}
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                      Desconectar
-                    </Button>
                   </div>
                 </div>
               ))}
