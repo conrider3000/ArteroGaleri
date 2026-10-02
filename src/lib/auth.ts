@@ -1,14 +1,13 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
-import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { db } from '@/lib/db';
 import * as schema from '@/lib/db/schema';
 import { encryptToken } from '@/lib/crypto/tokens';
+import { eq } from 'drizzle-orm';
 
-const hasDatabase = process.env.DATABASE_URL && process.env.NEXT_PHASE !== 'phase-production-build';
+const hasDatabase = !!process.env.DATABASE_URL && process.env.NEXT_PHASE !== 'phase-production-build';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: hasDatabase ? DrizzleAdapter(db) : undefined,
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
@@ -24,29 +23,63 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === 'google' && account.refresh_token && hasDatabase) {
-        const encryptedRefresh = await encryptToken(account.refresh_token);
-        const encryptedAccess = account.access_token ? await encryptToken(account.access_token) : null;
-        
-        await db.insert(schema.cloudProviders).values({
-          userId: user.id!,
-          provider: 'google_drive',
-          displayName: user.name || user.email || '',
-          encryptedRefreshToken: encryptedRefresh,
-          encryptedAccessToken: encryptedAccess,
-          tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
-          scope: account.scope,
-          isDefault: true,
-        }).onConflictDoUpdate({
-          target: [schema.cloudProviders.userId, schema.cloudProviders.provider],
-          set: {
-            encryptedRefreshToken: encryptedRefresh,
-            encryptedAccessToken: encryptedAccess,
-            tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
-            scope: account.scope,
-            updatedAt: new Date(),
-          },
-        });
+      if (account?.provider === 'google' && hasDatabase) {
+        try {
+          let dbUser = await db.query.users.findFirst({
+            where: eq(schema.users.googleSub, account.providerAccountId),
+          });
+
+          if (!dbUser && user.email) {
+            dbUser = await db.query.users.findFirst({
+              where: eq(schema.users.email, user.email),
+            });
+          }
+
+          if (!dbUser) {
+            const [created] = await db.insert(schema.users).values({
+              googleSub: account.providerAccountId,
+              email: user.email!,
+              name: user.name,
+              avatarUrl: user.image,
+            }).returning();
+            dbUser = created;
+            user.id = dbUser.id;
+          } else {
+            user.id = dbUser.id;
+            await db.update(schema.users).set({
+              name: user.name,
+              avatarUrl: user.image,
+              updatedAt: new Date(),
+            }).where(eq(schema.users.id, dbUser.id));
+          }
+
+          if (account.refresh_token) {
+            const encryptedRefresh = await encryptToken(account.refresh_token);
+            const encryptedAccess = account.access_token ? await encryptToken(account.access_token) : null;
+
+            await db.insert(schema.cloudProviders).values({
+              userId: dbUser.id,
+              provider: 'google_drive',
+              displayName: user.name || user.email || '',
+              encryptedRefreshToken: encryptedRefresh,
+              encryptedAccessToken: encryptedAccess,
+              tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+              scope: account.scope,
+              isDefault: true,
+            }).onConflictDoUpdate({
+              target: [schema.cloudProviders.userId, schema.cloudProviders.provider],
+              set: {
+                encryptedRefreshToken: encryptedRefresh,
+                encryptedAccessToken: encryptedAccess,
+                tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+                scope: account.scope,
+                updatedAt: new Date(),
+              },
+            });
+          }
+        } catch (e) {
+          console.error('signIn callback error:', e);
+        }
       }
       return true;
     },
@@ -55,15 +88,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
         token.providerId = account.providerAccountId;
-        if (hasDatabase) {
-          const provider = await db.query.cloudProviders.findFirst({
-            where: (providers, { eq, and }) => and(
-              eq(providers.userId, user.id!),
-              eq(providers.provider, 'google_drive')
-            ),
-          });
-          token.cloudProviderId = provider?.id;
-        }
       }
       return token;
     },
