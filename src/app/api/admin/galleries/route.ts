@@ -12,7 +12,16 @@ const createGallerySchema = z.object({
   sourceDriveId: z.string().optional(),
   accessMode: z.enum(['public', 'unlisted', 'password']).default('unlisted'),
   password: z.string().min(8).max(128).optional(),
-  allowedEmails: z.array(z.string().email()).default([]),
+  allowedEmails: z.union([z.array(z.string().email()), z.string()])
+    .optional()
+    .transform(v =>
+      Array.isArray(v)
+        ? v
+        : (v ?? '')
+            .split(/[\n,]/)
+            .map(s => s.trim())
+            .filter(Boolean)
+    ),
   requireEmailVerification: z.boolean().default(false),
   allowDownload: z.boolean().default(true),
   maxResolution: z.enum(['full', 'preview', 'grid']).default('full'),

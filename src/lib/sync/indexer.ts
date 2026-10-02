@@ -125,7 +125,10 @@ async function processFile(gallery: any, file: MediaFile, source: any) {
   // Process image thumbnails
   if (isSupportedImage(file.mimeType || '') && file.thumbnailLink) {
     try {
-      const thumbnailRes = await fetch(file.thumbnailLink.replace(/=s\d+/, '=s1600'));
+      const token = await source.getAccessToken();
+      const thumbnailRes = await fetch(file.thumbnailLink.replace(/=s\d+/, '=s1600'), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (thumbnailRes.ok) {
         const buffer = Buffer.from(await thumbnailRes.arrayBuffer());
         const processed = await processImage(buffer, file.mimeType || '');
