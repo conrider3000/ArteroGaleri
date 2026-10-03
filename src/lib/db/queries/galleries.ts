@@ -43,17 +43,33 @@ export async function updateCloudProvider(id: string, data: Partial<typeof schem
   return provider;
 }
 
+async function attachMediaCount<T extends { id: string }>(galleries: T[]): Promise<(T & { _count: { media: number } })[]> {
+  if (galleries.length === 0) return galleries as (T & { _count: { media: number } })[];
+
+  const counts = await db
+    .select({ galleryId: schema.media.galleryId, count: sql<number>`count(*)::int` })
+    .from(schema.media)
+    .where(inArray(schema.media.galleryId, galleries.map(g => g.id)))
+    .groupBy(schema.media.galleryId);
+
+  const countMap = new Map(counts.map(c => [c.galleryId, c.count]));
+  return galleries.map(g => ({ ...g, _count: { media: countMap.get(g.id) ?? 0 } })) as (T & { _count: { media: number } })[];
+}
+
+async function attachMediaCountOne<T extends { id: string }>(gallery: T): Promise<T & { _count: { media: number } }> {
+  const [withCount] = await attachMediaCount([gallery]);
+  return withCount;
+}
+
 export async function getGalleriesByOwner(ownerId: string) {
-  return db.query.galleries.findMany({
+  const galleries = await db.query.galleries.findMany({
     where: eq(schema.galleries.ownerId, ownerId),
     orderBy: desc(schema.galleries.updatedAt),
     with: {
       provider: true,
-      _count: {
-        select: { media: true },
-      },
     },
   });
+  return attachMediaCount(galleries);
 }
 
 export async function getGalleryById(id: string) {
@@ -67,16 +83,15 @@ export async function getGalleryById(id: string) {
 }
 
 export async function getGalleryBySlug(slug: string) {
-  return db.query.galleries.findFirst({
+  const gallery = await db.query.galleries.findFirst({
     where: eq(schema.galleries.slug, slug),
     with: {
       provider: true,
       owner: true,
-      _count: {
-        select: { media: true },
-      },
     },
   });
+  if (!gallery) return null;
+  return attachMediaCountOne(gallery);
 }
 
 export async function getGalleryWithDetails(slug: string) {
@@ -85,13 +100,12 @@ export async function getGalleryWithDetails(slug: string) {
     with: {
       provider: true,
       owner: true,
-      _count: {
-        select: { media: true },
-      },
     },
   });
 
   if (!gallery) return null;
+
+  const galleryWithCount = await attachMediaCountOne(gallery);
 
   // Fetch folders
   const foldersResult = await db.selectDistinct({ folderPath: schema.media.folderPath })
@@ -110,7 +124,7 @@ export async function getGalleryWithDetails(slug: string) {
   const cameras = camerasResult.filter(r => r.make && r.model).map(r => ({ make: r.make!, model: r.model! }));
 
   return {
-    ...gallery,
+    ...galleryWithCount,
     folders,
     cameras,
   };

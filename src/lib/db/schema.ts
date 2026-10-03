@@ -1,4 +1,5 @@
 import { pgTable, uuid, text, timestamp, boolean, jsonb, integer, index, uniqueIndex, pgEnum } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 export const accessModeEnum = pgEnum('access_mode', ['public', 'unlisted', 'password']);
 export const mediaKindEnum = pgEnum('media_kind', ['image', 'video', 'other']);
@@ -121,6 +122,46 @@ export const galleryAccessLogs = pgTable('gallery_access_logs', {
 }, (t) => [
   index('access_logs_gallery_idx').on(t.galleryId, t.createdAt),
 ]);
+
+export const usersRelations = relations(users, ({ many }) => ({
+  cloudProviders: many(cloudProviders),
+  galleries: many(galleries),
+}));
+
+export const cloudProvidersRelations = relations(cloudProviders, ({ one, many }) => ({
+  user: one(users, {
+    fields: [cloudProviders.userId],
+    references: [users.id],
+  }),
+  galleries: many(galleries),
+}));
+
+export const galleriesRelations = relations(galleries, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [galleries.ownerId],
+    references: [users.id],
+  }),
+  provider: one(cloudProviders, {
+    fields: [galleries.providerId],
+    references: [cloudProviders.id],
+  }),
+  media: many(media),
+  accessLogs: many(galleryAccessLogs),
+}));
+
+export const mediaRelations = relations(media, ({ one }) => ({
+  gallery: one(galleries, {
+    fields: [media.galleryId],
+    references: [galleries.id],
+  }),
+}));
+
+export const galleryAccessLogsRelations = relations(galleryAccessLogs, ({ one }) => ({
+  gallery: one(galleries, {
+    fields: [galleryAccessLogs.galleryId],
+    references: [galleries.id],
+  }),
+}));
 
 export type User = typeof users.$inferSelect;
 export type CloudProvider = typeof cloudProviders.$inferSelect;
