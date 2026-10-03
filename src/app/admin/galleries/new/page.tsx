@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,6 +81,10 @@ export default function NewGalleryPage() {
       console.error(e);
     }
   };
+
+  useEffect(() => {
+    fetchProviders();
+  }, []);
 
   const fetchFolders = async (folderId: string, driveId?: string) => {
     setLoading(true);
