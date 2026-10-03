@@ -2,7 +2,6 @@ import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 export default auth((req) => {
-  // Permite rotas internas do NextAuth passarem direto
   if (req.nextUrl.pathname.startsWith('/api/auth/')) {
     return NextResponse.next();
   }
@@ -12,7 +11,8 @@ export default auth((req) => {
   const isOnSignin = req.nextUrl.pathname === '/auth/signin';
 
   if (isOnAdmin && !isLoggedIn) {
-    return NextResponse.redirect(new URL('/auth/signin', req.nextUrl));
+    const callbackUrl = req.nextUrl.pathname + req.nextUrl.search;
+    return NextResponse.redirect(new URL(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`, req.nextUrl));
   }
 
   if (isOnSignin && isLoggedIn) {

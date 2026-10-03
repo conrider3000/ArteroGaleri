@@ -11,7 +11,7 @@ export default function HomePage() {
           <h1 className="text-xl font-bold tracking-tight">Artero Galeri</h1>
           <nav className="flex items-center gap-4">
             <Link href="/auth/signin" className="text-sm font-medium hover:underline">Entrar</Link>
-            <Link href="/auth/signin">
+            <Link href="/admin/galleries/new">
               <Button>Começar</Button>
             </Link>
           </nav>
@@ -27,7 +27,7 @@ export default function HomePage() {
           com múltiplas visualizações. Sem upload, sem duplicação, privacidade total.
         </p>
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link href="/auth/signin">
+          <Link href="/admin/galleries/new">
             <Button size="lg" className="w-full sm:w-auto">
               Conectar Google Drive
             </Button>
