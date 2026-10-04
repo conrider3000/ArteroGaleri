@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -172,9 +173,24 @@ export default function NewGalleryPage() {
                   <SelectValue placeholder="Selecione o provedor" />
                 </SelectTrigger>
                 <SelectContent>
-                  {providers.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
+                  {providers.length === 0 ? (
+                    <div className="text-center py-8 space-y-3">
+                      <p className="text-muted-foreground mb-4">Nenhum provedor conectado</p>
+                      <Button
+                        onClick={async () => {
+                          await signIn('google', { callbackUrl: '/admin/galleries/new' });
+                        }}
+                      >
+                        Conectar Google Drive
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {providers.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
               {errors.providerId && <p className="text-sm text-destructive">Selecione um provedor</p>}
