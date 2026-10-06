@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { LayoutDashboard, GalleryVertical, Settings, LogOut, FolderOpen, Plus } from 'lucide-react';
+import { LayoutDashboard, GalleryVertical, Settings, LogOut, FolderOpen, Plus, Home } from 'lucide-react';
+import { getCloudProvidersByUser } from '@/lib/db/queries/galleries';
 
 const navigation = [
   { name: 'Galerias', href: '/admin/galleries', icon: GalleryVertical },
@@ -22,12 +23,19 @@ export default async function AdminLayout({
     redirect('/auth/signin');
   }
 
+  const providers = await getCloudProvidersByUser(session.user.id);
+  const hasProviders = providers.length > 0;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-40">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/admin/galleries" className="flex items-center gap-2 font-bold text-xl">
-            <FolderOpen className="h-6 w-6" />
+          <Link href={hasProviders ? '/admin/galleries' : '/'} className="flex items-center gap-2 font-bold text-xl">
+            {hasProviders ? (
+              <FolderOpen className="h-6 w-6" />
+            ) : (
+              <Home className="h-6 w-6" />
+            )}
             Artero Galeri
           </Link>
           <nav className="flex items-center gap-1">
