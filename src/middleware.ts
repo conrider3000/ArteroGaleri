@@ -16,7 +16,8 @@ export default auth((req) => {
   }
 
   if (isOnSignin && isLoggedIn) {
-    return NextResponse.redirect(new URL('/admin', req.nextUrl));
+    const callbackUrl = req.nextUrl.searchParams.get('callbackUrl') || '/admin';
+    return NextResponse.redirect(new URL(callbackUrl, req.nextUrl));
   }
 
   return NextResponse.next();
