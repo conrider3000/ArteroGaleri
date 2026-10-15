@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ConnectDriveCta } from '@/components/ConnectDriveCta';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FolderOpen, Lock, Globe, Zap, Eye, MapPin } from 'lucide-react';
 
@@ -13,10 +14,10 @@ export default function HomePage() {
             Artero Galeri
           </Link>
           <nav className="flex items-center gap-4">
-<Link href="/auth/signin?callbackUrl=/" className="text-sm font-medium hover:underline">Entrar</Link>
-              <Link href="/auth/signin?callbackUrl=/">
-              <Button>Começar</Button>
-            </Link>
+            <ConnectDriveCta variant="link" className="h-auto p-0 text-sm font-medium">
+              Entrar
+            </ConnectDriveCta>
+            <ConnectDriveCta>Começar</ConnectDriveCta>
           </nav>
         </div>
       </header>
@@ -30,11 +31,9 @@ export default function HomePage() {
           com múltiplas visualizações. Sem upload, sem duplicação, privacidade total.
         </p>
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link href="/auth/signin?callbackUrl=/">
-            <Button size="lg" className="w-full sm:w-auto">
-              Conectar Google Drive
-            </Button>
-          </Link>
+          <ConnectDriveCta size="lg" className="w-full sm:w-auto">
+            Conectar Google Drive
+          </ConnectDriveCta>
           <Button variant="outline" size="lg" className="w-full sm:w-auto">
             Ver demo
           </Button>
