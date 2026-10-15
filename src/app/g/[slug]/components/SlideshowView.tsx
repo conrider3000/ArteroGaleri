@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils/cn';
 import { Media } from '@/lib/db/schema';
 import { MediaItem } from './MediaItem';
+import { mediaThumbUrl } from './thumbUrl';
 import { ChevronLeft, ChevronRight, Play, Pause, X, Expand } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -49,9 +50,8 @@ export function SlideshowView({ media, gallery }: Props) {
   }, [handleKeyDown]);
 
   const currentMedia = media[currentIndex];
-  const previewUrl = currentMedia.previewKey
-    ? `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL || ''}/g/${gallery.id}/preview/${currentMedia.id}.webp`
-    : `/api/thumb/${currentMedia.id}/preview`;
+  const previewUrl = mediaThumbUrl(gallery.id, currentMedia, 'preview')
+    ?? `/api/thumb/${currentMedia.id}/preview`;
 
   return (
     <div className="relative h-[calc(100vh-200px)] min-h-[500px]">
@@ -160,7 +160,7 @@ export function SlideshowView({ media, gallery }: Props) {
               )}
             >
               <img
-                src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_URL || ''}/g/${gallery.id}/thumb/${item.id}.webp`}
+                src={mediaThumbUrl(gallery.id, item, 'thumb') ?? `/api/thumb/${item.id}/thumb`}
                 alt={item.name}
                 className="w-full h-full object-cover"
               />

@@ -8,10 +8,13 @@ export default function HomePage() {
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <h1 className="text-xl font-bold tracking-tight">Artero Galeri</h1>
+          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+            <FolderOpen className="h-6 w-6" />
+            Artero Galeri
+          </Link>
           <nav className="flex items-center gap-4">
-            <Link href="/auth/signin" className="text-sm font-medium hover:underline">Entrar</Link>
-            <Link href="/auth/signin?callbackUrl=/">
+<Link href="/auth/signin?callbackUrl=/" className="text-sm font-medium hover:underline">Entrar</Link>
+              <Link href="/auth/signin?callbackUrl=/">
               <Button>Começar</Button>
             </Link>
           </nav>

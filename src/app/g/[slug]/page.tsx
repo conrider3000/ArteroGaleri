@@ -16,10 +16,8 @@ export default async function GalleryPage({ params }: Props) {
     redirect('/404');
   }
 
-  // Check access
   const hasAccess = await checkGalleryAccess(gallery, session?.user?.id);
   if (!hasAccess) {
-    // Redirect to auth page for this gallery
     redirect(`/g/${slug}/auth`);
   }
 
@@ -27,13 +25,9 @@ export default async function GalleryPage({ params }: Props) {
 }
 
 async function checkGalleryAccess(gallery: any, userId?: string): Promise<boolean> {
-  // Public access
   if (gallery.accessMode === 'public') return true;
-  
-  // Owner always has access
+
   if (userId && gallery.ownerId === userId) return true;
 
-  // For unlisted, password, email - need session check
-  // This will be handled client-side with cookie check
-  return true; // Allow rendering, client will gate
+  return true;
 }

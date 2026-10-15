@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Media } from '@/lib/db/schema';
 import { MapPin, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { mediaThumbUrl } from './thumbUrl';
 
 interface Props {
   media: Media[];
@@ -161,7 +162,7 @@ export function MapView({ media, gallery }: Props) {
         <div className="absolute bottom-4 left-4 right-4 max-w-md mx-auto">
           <div className="bg-background rounded-lg shadow-lg p-4 flex items-center gap-3">
             <img
-              src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_URL || ''}/g/${gallery.id}/thumb/${selectedMedia.id}.webp`}
+              src={mediaThumbUrl(gallery.id, selectedMedia, 'thumb') ?? `/api/thumb/${selectedMedia.id}/thumb`}
               alt={selectedMedia.name}
               className="w-16 h-16 rounded object-cover"
             />

@@ -5,6 +5,7 @@ import { Media } from '@/lib/db/schema';
 import { formatDate, formatRelative } from '@/lib/utils/date';
 import { Camera, MapPin, Star, Play, Expand, Download, Info } from 'lucide-react';
 import { useState } from 'react';
+import { mediaThumbUrl } from './thumbUrl';
 
 interface Props {
   media: Media;
@@ -19,15 +20,12 @@ export function MediaItem({ media, gallery, width, height, priority }: Props) {
   const [showMetadata, setShowMetadata] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const thumbUrl = media.gridKey 
-    ? `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL || ''}/g/${gallery.id}/grid/${media.id}.webp`
-    : media.thumbKey
-      ? `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL || ''}/g/${gallery.id}/thumb/${media.id}.webp`
-      : `/api/thumb/${media.id}/grid`;
+  const thumbUrl = mediaThumbUrl(gallery.id, media, 'grid')
+    ?? mediaThumbUrl(gallery.id, media, 'thumb')
+    ?? `/api/thumb/${media.id}/grid`;
 
-  const previewUrl = media.previewKey
-    ? `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL || ''}/g/${gallery.id}/preview/${media.id}.webp`
-    : `/api/thumb/${media.id}/preview`;
+  const previewUrl = mediaThumbUrl(gallery.id, media, 'preview')
+    ?? `/api/thumb/${media.id}/preview`;
 
   const isVideo = media.kind === 'video';
 

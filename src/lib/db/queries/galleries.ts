@@ -1,7 +1,8 @@
 import { db } from '../index';
 import * as schema from '../schema';
-import { eq, and, desc, asc, ilike, inArray, sql, or, isNull, gte, lte } from 'drizzle-orm';
+import { eq, and, desc, asc, ilike, inArray, sql, or, isNull, gte, lte, gt, lt, SQL } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
+import { createHash } from 'node:crypto';
 
 export async function getUserByGoogleSub(googleSub: string) {
   return db.query.users.findFirst({
@@ -147,6 +148,38 @@ export async function deleteGallery(id: string) {
   await db.delete(schema.galleries).where(eq(schema.galleries.id, id));
 }
 
+function getSortColumn(sortBy: string): SQL {
+  switch (sortBy) {
+    case 'name':
+      return sql`${schema.media.name}`;
+    case 'size':
+      return sql`${schema.media.sizeBytes}`;
+    case 'camera':
+      return sql`${schema.media.cameraMake}`;
+    case 'random':
+      return sql`md5(${schema.media.id}::text)`;
+    case 'dateTaken':
+    default:
+      return sql`${schema.media.dateTaken}`;
+  }
+}
+
+function getCursorValue(item: typeof schema.media.$inferSelect, sortBy: string): string | number | null {
+  switch (sortBy) {
+    case 'name':
+      return item.name || null;
+    case 'size':
+      return item.sizeBytes;
+    case 'camera':
+      return item.cameraMake || null;
+    case 'random':
+      return createHash('md5').update(item.id).digest('hex');
+    case 'dateTaken':
+    default:
+      return item.dateTaken ? item.dateTaken.toISOString() : null;
+  }
+}
+
 export async function getMediaPage(input: {
   galleryId: string;
   cursor?: string;
@@ -186,43 +219,54 @@ export async function getMediaPage(input: {
     }
     if (filters.isStarred) conditions.push(eq(schema.media.isStarred, true));
     if (filters.tags && filters.tags.length > 0) {
-      conditions.push(sql`${schema.media.tags} && ${filters.tags}`);
+      conditions.push(sql`${schema.media.tags} && ARRAY[${sql.join(filters.tags.map((t) => sql`${t}`), sql`, `)}]::text[]`);
     }
     if (filters.search) {
       conditions.push(ilike(schema.media.name, `%${filters.search}%`));
     }
   }
 
+const sortColumn = getSortColumn(sortBy);
+  const sortAsc = sortDir === 'asc';
+
   if (cursor) {
-    const decoded = JSON.parse(Buffer.from(cursor, 'base64').toString());
-    const { value: cursorValue, id: cursorId } = decoded;
-    if (sortDir === 'asc') {
-      conditions.push(or(
-        sql`${sql.identifier(sortBy)} > ${cursorValue}`,
-        and(sql`${sql.identifier(sortBy)} = ${cursorValue}`, sql`${schema.media.id} > ${cursorId}`)
-      )!);
-    } else {
-      conditions.push(or(
-        sql`${sql.identifier(sortBy)} < ${cursorValue}`,
-        and(sql`${sql.identifier(sortBy)} = ${cursorValue}`, sql`${schema.media.id} < ${cursorId}`)
-      )!);
+    try {
+      const decoded = JSON.parse(Buffer.from(cursor, 'base64').toString());
+      const { value: cursorValue, id: cursorId } = decoded;
+      if (cursorId) {
+        if (cursorValue === null || cursorValue === undefined) {
+          conditions.push(and(
+            isNull(sortColumn),
+            sortAsc ? gt(schema.media.id, cursorId) : lt(schema.media.id, cursorId)
+          )!);
+        } else {
+          conditions.push(or(
+            sortAsc ? gt(sortColumn, cursorValue) : lt(sortColumn, cursorValue),
+            and(
+              eq(sortColumn, cursorValue),
+              sortAsc ? gt(schema.media.id, cursorId) : lt(schema.media.id, cursorId)
+            )
+          )!);
+        }
+      }
+    } catch {
+      console.warn('getMediaPage: invalid cursor ignored');
     }
   }
 
-  const orderBy = sortDir === 'asc' ? asc(sql.identifier(sortBy)) : desc(sql.identifier(sortBy));
+  const orderDirection = sortAsc ? asc(sortColumn) : desc(sortColumn);
 
   const items = await db.query.media.findMany({
     where: and(...conditions),
-    orderBy: [orderBy, desc(schema.media.id)],
+    orderBy: [sql`${orderDirection} nulls last`, sortAsc ? asc(schema.media.id) : desc(schema.media.id)],
     limit: limit + 1,
   });
 
   let nextCursor: string | undefined;
   if (items.length > limit) {
     const lastItem = items[limit - 1];
-    const cursorValue = (lastItem as any)[sortBy];
     nextCursor = Buffer.from(JSON.stringify({
-      value: cursorValue,
+      value: getCursorValue(lastItem, sortBy),
       id: lastItem.id,
     })).toString('base64');
     items.pop();
@@ -269,7 +313,7 @@ export async function getMediaCount(galleryId: string, filters?: MediaFilters) {
     }
     if (filters.isStarred) conditions.push(eq(schema.media.isStarred, true));
     if (filters.tags && filters.tags.length > 0) {
-      conditions.push(sql`${schema.media.tags} && ${filters.tags}`);
+      conditions.push(sql`${schema.media.tags} && ARRAY[${sql.join(filters.tags.map((t) => sql`${t}`), sql`, `)}]::text[]`);
     }
     if (filters.search) {
       conditions.push(ilike(schema.media.name, `%${filters.search}%`));
