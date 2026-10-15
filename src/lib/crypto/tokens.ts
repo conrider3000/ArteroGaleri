@@ -1,4 +1,4 @@
-const ALGORITHM = 'aes-256-gcm';
+const ALGORITHM = 'aes-gcm';
 const IV_LENGTH = 12;
 
 let cachedKey: CryptoKey | null = null;

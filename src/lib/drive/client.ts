@@ -1,4 +1,4 @@
-import { decryptToken } from '@/lib/crypto/tokens';
+import { decryptToken, encryptToken } from '@/lib/crypto/tokens';
 import { db } from '@/lib/db';
 import * as schema from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
@@ -36,29 +36,12 @@ export class GoogleDriveSource implements MediaSource {
 
     await db.update(schema.cloudProviders)
       .set({
-        encryptedAccessToken: await this.encryptForStorage(access_token),
+        encryptedAccessToken: await encryptToken(access_token),
         tokenExpiresAt: new Date(Date.now() + expires_in * 1000),
       })
       .where(eq(schema.cloudProviders.id, this.providerId));
 
     return access_token;
-  }
-
-  private async encryptForStorage(token: string): Promise<string> {
-    const key = await crypto.subtle.importKey(
-      'raw',
-      Buffer.from(process.env.TOKEN_ENCRYPTION_KEY!, 'base64'),
-      { name: 'aes-256-gcm' },
-      false,
-      ['encrypt']
-    );
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encoded = new TextEncoder().encode(token);
-    const ciphertext = await crypto.subtle.encrypt({ name: 'aes-256-gcm', iv }, key, encoded);
-    const combined = new Uint8Array(iv.length + ciphertext.byteLength);
-    combined.set(iv);
-    combined.set(new Uint8Array(ciphertext), iv.length);
-    return Buffer.from(combined).toString('base64');
   }
 
   async validateToken(): Promise<boolean> {
